@@ -181,23 +181,65 @@ export function MeetingRoom({
   }, [ariaQuery, submitQuery])
 
   // ── Wake word detection ───────────────────────────────────────────
-  // Listens for "hey aria, <query>" or "aria, <query>" in final segments
+  // Handles two cases:
+  //   1. Inline: "Hey Aria, what's the status?" — query in the same chunk
+  //   2. Split:  "Hey Aria." pause → "What's the status?" — query in the next chunk
   const lastWakeSegmentRef = useRef<string | null>(null)
+  const awaitingQueryRef = useRef(false)
+  const awaitingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const enterListeningMode = useCallback(() => {
+    awaitingQueryRef.current = true
+    if (awaitingTimerRef.current) clearTimeout(awaitingTimerRef.current)
+    // Auto-reset after 15s if no follow-up arrives
+    awaitingTimerRef.current = setTimeout(() => {
+      awaitingQueryRef.current = false
+    }, 15_000)
+    toast.info('Aria is listening…')
+  }, [])
+
+  const isWakeWord = (text: string) =>
+    /hey[,\s]*aria/i.test(text) || /^aria[,.]?$/i.test(text)
+
   useEffect(() => {
     const finals = segments.filter((s) => s.isFinal)
     const latest = finals.at(-1)
     if (!latest || latest.id === lastWakeSegmentRef.current) return
     lastWakeSegmentRef.current = latest.id
 
-    // Match "hey aria, what..." or "aria, what..."
-    const match =
-      latest.text.match(/hey\s+aria[,.]?\s+(.+)/i) ||
-      latest.text.match(/\baria[,.]?\s+(.+)/i)
-    if (!match) return
+    const text = latest.text.trim()
 
-    const q = match[1].trim()
-    if (q.length >= 3 && !ariaLoading) submitQuery(q)
-  }, [segments, ariaLoading, submitQuery])
+    // Follow-up chunk after a wake-word-only detection
+    if (awaitingQueryRef.current) {
+      if (awaitingTimerRef.current) clearTimeout(awaitingTimerRef.current)
+      awaitingQueryRef.current = false
+
+      // If the follow-up chunk is ALSO a wake word, re-enter listening mode
+      // instead of submitting "hey aria" as the query
+      if (isWakeWord(text)) {
+        enterListeningMode()
+        return
+      }
+
+      if (text.length >= 3 && !ariaLoading) submitQuery(text)
+      return
+    }
+
+    // Inline query — Whisper may add commas/periods between words
+    // e.g. "Hey, Aria, summarize this" or "hey aria what did she say"
+    const inlineMatch =
+      text.match(/hey[,\s]+aria[,.]?\s+(.+)/i) ||
+      text.match(/\baria[,.]?\s+(.+)/i)
+
+    if (inlineMatch) {
+      const q = inlineMatch[1].trim()
+      if (q.length >= 3 && !ariaLoading) submitQuery(q)
+      return
+    }
+
+    // Wake word alone — wait for the next chunk as the query
+    if (isWakeWord(text)) enterListeningMode()
+  }, [segments, ariaLoading, submitQuery, enterListeningMode])
 
   // ── End meeting ──────────────────────────────────────────────────
   const [endingMeeting, startEnd] = useTransition()
