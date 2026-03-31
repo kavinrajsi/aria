@@ -18,6 +18,9 @@ import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { MeetingStatusBadge } from '@/components/meetings/meeting-status-badge'
 import { StartMeetingButton } from '@/components/meetings/start-meeting-button'
+import { DocumentUpload } from '@/components/meetings/document-upload'
+import { MeetingSummary } from '@/components/meetings/meeting-summary'
+import { TranscriptReplay } from '@/components/meetings/transcript-replay'
 
 export const metadata: Metadata = { title: 'Meeting' }
 
@@ -60,6 +63,50 @@ export default async function MeetingDetailPage({ params }: Props) {
   const isOrganizer = meeting.organizer_id === user.id
   const canEdit = isAdmin || isOrganizer
 
+  const isCompleted = meeting.status === 'completed'
+
+  const [
+    { data: providerSettings },
+    { data: documents },
+    { data: existingSummary },
+    { data: meetingActionItems },
+    { data: replayTranscripts },
+  ] = await Promise.all([
+    supabase.from('settings').select('key').in('key', ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY']),
+    supabase
+      .from('documents')
+      .select('id, file_name, file_type, uploaded_at')
+      .eq('meeting_id', id)
+      .order('uploaded_at', { ascending: true }),
+    isCompleted
+      ? supabase
+          .from('meeting_summaries')
+          .select('id, summary_text, key_decisions, generated_at')
+          .eq('meeting_id', id)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    isCompleted
+      ? supabase
+          .from('action_items')
+          .select('id, description, status, assigned_to, assignee:profiles!assigned_to(id, name)')
+          .eq('meeting_id', id)
+          .order('created_at', { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+    isCompleted
+      ? supabase
+          .from('transcripts')
+          .select('id, speaker_label, content, timestamp_ms')
+          .eq('meeting_id', id)
+          .order('timestamp_ms', { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+  ])
+
+  const configuredKeys = new Set((providerSettings ?? []).map((r: { key: string }) => r.key))
+  const availableProviders = {
+    anthropic: configuredKeys.has('ANTHROPIC_API_KEY'),
+    openai: configuredKeys.has('OPENAI_API_KEY'),
+  }
+
   const organizer = Array.isArray(meeting.organizer)
     ? meeting.organizer[0] ?? null
     : meeting.organizer
@@ -101,7 +148,7 @@ export default async function MeetingDetailPage({ params }: Props) {
                   Edit
                 </Link>
               </Button>
-              <StartMeetingButton meetingId={id} />
+              <StartMeetingButton meetingId={id} availableProviders={availableProviders} />
             </>
           )}
           {meeting.status === 'active' && (
@@ -118,6 +165,26 @@ export default async function MeetingDetailPage({ params }: Props) {
       <div className="grid gap-6 md:grid-cols-3">
         {/* Main content */}
         <div className="md:col-span-2 space-y-6">
+          {/* Summary — only for completed meetings */}
+          {isCompleted && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <span className="h-4 w-4 text-muted-foreground">✦</span>
+                  Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MeetingSummary
+                  meetingId={id}
+                  canGenerate={canEdit}
+                  initialSummary={existingSummary ?? null}
+                  initialActionItems={meetingActionItems ?? []}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           {/* Details */}
           <Card>
             <CardHeader>
@@ -178,6 +245,36 @@ export default async function MeetingDetailPage({ params }: Props) {
                 <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                   {meeting.briefing_notes}
                 </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Documents — pre-meeting reference files for Aria */}
+          {canEdit && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  Documents
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <DocumentUpload
+                  meetingId={id}
+                  initialDocuments={documents ?? []}
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Transcript replay — only for completed meetings */}
+          {isCompleted && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Transcript</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TranscriptReplay transcripts={replayTranscripts ?? []} />
               </CardContent>
             </Card>
           )}

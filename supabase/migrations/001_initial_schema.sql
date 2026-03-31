@@ -4,7 +4,7 @@
 -- ============================================================
 
 -- Extensions
-create extension if not exists "pgvector";
+create extension if not exists "vector";
 
 -- ============================================================
 -- TABLES

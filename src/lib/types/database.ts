@@ -80,6 +80,7 @@ export type Database = {
           scheduled_at: string
           organizer_id: string | null
           status: 'scheduled' | 'active' | 'completed' | 'cancelled'
+          ai_provider: 'anthropic' | 'openai' | null
           agenda_items: string[]
           briefing_notes: string | null
           created_at: string
@@ -91,6 +92,7 @@ export type Database = {
           scheduled_at: string
           organizer_id?: string | null
           status?: 'scheduled' | 'active' | 'completed' | 'cancelled'
+          ai_provider?: 'anthropic' | 'openai' | null
           agenda_items?: string[]
           briefing_notes?: string | null
           created_at?: string
@@ -101,8 +103,25 @@ export type Database = {
           scheduled_at?: string
           organizer_id?: string | null
           status?: 'scheduled' | 'active' | 'completed' | 'cancelled'
+          ai_provider?: 'anthropic' | 'openai' | null
           agenda_items?: string[]
           briefing_notes?: string | null
+          updated_at?: string
+        }
+      }
+      settings: {
+        Row: {
+          key: string
+          value: string
+          updated_at: string
+        }
+        Insert: {
+          key: string
+          value: string
+          updated_at?: string
+        }
+        Update: {
+          value?: string
           updated_at?: string
         }
       }
@@ -230,6 +249,7 @@ export type Database = {
           file_type: string | null
           uploaded_by: string | null
           uploaded_at: string
+          content_text: string | null
         }
         Insert: {
           id?: string
@@ -239,11 +259,13 @@ export type Database = {
           file_type?: string | null
           uploaded_by?: string | null
           uploaded_at?: string
+          content_text?: string | null
         }
         Update: {
           file_name?: string
           storage_url?: string
           file_type?: string | null
+          content_text?: string | null
         }
       }
       aria_interactions: {

@@ -3,8 +3,9 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { getApiKeyStatuses, getApiKeyValues } from '@/lib/actions/settings'
+import { ApiKeysForm } from '@/components/settings/api-keys-form'
 
 export const metadata: Metadata = { title: 'Settings' }
 
@@ -23,6 +24,10 @@ export default async function SettingsPage() {
     .single()
 
   if (!profile) redirect('/sign-in')
+
+  const isAdmin = profile.role === 'admin'
+  const apiKeyStatuses = isAdmin ? await getApiKeyStatuses() : null
+  const apiKeyValues = isAdmin ? await getApiKeyValues() : null
 
   const voiceProfile = Array.isArray(profile.voice_profiles)
     ? profile.voice_profiles[0] ?? null
@@ -97,6 +102,20 @@ export default async function SettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      {isAdmin && apiKeyStatuses && apiKeyValues && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm">API Keys</CardTitle>
+            <CardDescription>
+              Keys are stored securely and only accessible to admins. Leave a field blank to keep the existing value.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ApiKeysForm statuses={apiKeyStatuses} values={apiKeyValues} />
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 }
