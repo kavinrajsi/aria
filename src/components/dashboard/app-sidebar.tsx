@@ -9,6 +9,7 @@ import {
   Mic,
   Settings,
   Users,
+  BarChart2,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -43,6 +44,7 @@ const navItems: NavItem[] = [
   { label: 'Meetings', href: '/meetings', icon: CalendarDays },
   { label: 'Action Items', href: '/action-items', icon: CheckSquare },
   { label: 'Participants', href: '/participants', icon: Users, adminOnly: true },
+  { label: 'Usage', href: '/usage', icon: BarChart2, adminOnly: true },
   { label: 'Settings', href: '/settings', icon: Settings },
 ]
 

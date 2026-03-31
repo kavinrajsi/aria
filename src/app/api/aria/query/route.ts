@@ -82,14 +82,27 @@ export async function POST(req: NextRequest) {
     system: systemPrompt,
     messages: [{ role: 'user', content: query }],
     maxOutputTokens: 512,
-    onFinish: async ({ text }) => {
-      if (interaction?.id) {
-        const { error } = await supabase
-          .from('aria_interactions')
-          .update({ response_text: text })
-          .eq('id', interaction.id)
-        if (error) console.error('[aria/query] failed to save response:', error.message)
-      }
+    onFinish: async ({ text, usage }) => {
+      await Promise.all([
+        interaction?.id
+          ? supabase
+              .from('aria_interactions')
+              .update({ response_text: text })
+              .eq('id', interaction.id)
+              .then(({ error }) => {
+                if (error) console.error('[aria/query] failed to save response:', error.message)
+              })
+          : Promise.resolve(),
+        supabase.from('token_usage').insert({
+          meeting_id: meetingId,
+          user_id: user.id,
+          provider: meeting.ai_provider === 'openai' ? 'openai' : 'anthropic',
+          model: meeting.ai_provider === 'openai' ? 'gpt-4o-mini' : 'claude-sonnet-4.6',
+          operation: 'aria_query',
+          input_tokens: usage.promptTokens ?? 0,
+          output_tokens: usage.completionTokens ?? 0,
+        }),
+      ])
     },
   })
 

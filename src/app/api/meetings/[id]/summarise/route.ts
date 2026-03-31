@@ -151,10 +151,23 @@ ${transcriptText}`
 
   let parsed: SummaryPayload
   try {
-    const { text } = await generateText({
+    const { text, usage } = await generateText({
       model,
       messages: [{ role: 'user', content: prompt }],
       maxOutputTokens: 1024,
+    })
+
+    // Fire-and-forget token logging
+    supabase.from('token_usage').insert({
+      meeting_id: meetingId,
+      user_id: user.id,
+      provider: useOpenAI ? 'openai' : 'anthropic',
+      model: useOpenAI ? 'gpt-4o-mini' : 'claude-sonnet-4.6',
+      operation: 'summary',
+      input_tokens: usage.promptTokens ?? 0,
+      output_tokens: usage.completionTokens ?? 0,
+    }).then(({ error }) => {
+      if (error) console.error('[summarise] token_usage insert:', error.message)
     })
 
     // Strip any accidental markdown code fences

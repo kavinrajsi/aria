@@ -168,7 +168,7 @@ export default async function MeetingDetailPage({ params }: Props) {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-5">
         {/* Main content */}
         <div className="md:col-span-2 space-y-6">
           {/* Summary — only for completed meetings */}
@@ -213,6 +213,36 @@ export default async function MeetingDetailPage({ params }: Props) {
                     <span className="font-medium">{organizer.name}</span>
                   </span>
                 </div>
+              )}
+              {participants.length > 0 && (
+                <>
+                  <Separator />
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground font-medium">
+                      Participants ({participants.length})
+                    </p>
+                    {participants.map((mp: {
+                      id: string
+                      user_id: string
+                      profile: { id: string; name: string; email: string } | null
+                    }) => {
+                      const p = mp.profile
+                      if (!p) return null
+                      const initials = p.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+                      return (
+                        <div key={mp.id} className="flex items-center gap-2.5">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm truncate flex-1">{p.name}</span>
+                          {organizer?.id === p.id && (
+                            <span className="text-xs text-muted-foreground shrink-0">Organiser</span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </>
               )}
             </CardContent>
           </Card>
@@ -274,6 +304,10 @@ export default async function MeetingDetailPage({ params }: Props) {
             </Card>
           )}
 
+        </div>
+
+        {/* Right sidebar */}
+        <div className="md:col-span-3 space-y-6">
           {/* Transcript replay — only for completed meetings */}
           {isCompleted && (
             <Card>
@@ -285,56 +319,11 @@ export default async function MeetingDetailPage({ params }: Props) {
               </CardContent>
             </Card>
           )}
-        </div>
-
-        {/* Participants sidebar */}
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">
-                Participants ({participants.length})
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {participants.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No participants added yet.</p>
-              ) : (
-                participants.map((mp: {
-                  id: string
-                  user_id: string
-                  profile: { id: string; name: string; email: string } | null
-                }) => {
-                  const p = mp.profile
-                  if (!p) return null
-                  const initials = p.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
-                  return (
-                    <div key={mp.id} className="flex items-center gap-2.5">
-                      <Avatar className="h-7 w-7">
-                        <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{p.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{p.email}</p>
-                      </div>
-                      {organizer?.id === p.id && (
-                        <span className="ml-auto text-xs text-muted-foreground shrink-0">
-                          Organiser
-                        </span>
-                      )}
-                    </div>
-                  )
-                })
-              )}
-              {canEdit && meeting.status === 'scheduled' && (
-                <>
-                  <Separator />
-                  <Button variant="outline" size="sm" className="w-full" asChild>
-                    <Link href={`/meetings/${id}/edit`}>Manage participants</Link>
-                  </Button>
-                </>
-              )}
-            </CardContent>
-          </Card>
+          {canEdit && meeting.status === 'scheduled' && (
+            <Button variant="outline" size="sm" className="w-full" asChild>
+              <Link href={`/meetings/${id}/edit`}>Manage participants</Link>
+            </Button>
+          )}
         </div>
       </div>
     </div>
