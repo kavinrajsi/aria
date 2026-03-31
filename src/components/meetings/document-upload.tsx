@@ -15,9 +15,10 @@ interface Doc {
 interface Props {
   meetingId: string
   initialDocuments: Doc[]
+  readOnly?: boolean
 }
 
-export function DocumentUpload({ meetingId, initialDocuments }: Props) {
+export function DocumentUpload({ meetingId, initialDocuments, readOnly = false }: Props) {
   const [documents, setDocuments] = useState<Doc[]>(initialDocuments)
   const [uploading, startUpload] = useTransition()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -63,53 +64,59 @@ export function DocumentUpload({ meetingId, initialDocuments }: Props) {
 
   return (
     <div className="space-y-3">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".txt,.md"
-        className="hidden"
-        onChange={handleFileChange}
-      />
+      {!readOnly && (
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".txt,.md"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      )}
 
-      {documents.length > 0 && (
+      {documents.length > 0 ? (
         <div className="space-y-2">
           {documents.map((doc) => (
             <div key={doc.id} className="flex items-center gap-2 text-sm">
               <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <span className="truncate flex-1 text-sm">{doc.file_name}</span>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
-                onClick={() => handleDelete(doc.id, doc.file_name)}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+              {!readOnly && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => handleDelete(doc.id, doc.file_name)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
             </div>
           ))}
         </div>
-      )}
-
-      {documents.length === 0 && (
+      ) : (
         <p className="text-xs text-muted-foreground">
-          No documents yet. Upload .txt or .md files for Aria to reference during the meeting.
+          {readOnly
+            ? 'No documents were uploaded for this meeting.'
+            : 'No documents yet. Upload .txt or .md files for Aria to reference during the meeting.'}
         </p>
       )}
 
-      <Button
-        variant="outline"
-        size="sm"
-        className="w-full"
-        disabled={uploading}
-        onClick={() => fileInputRef.current?.click()}
-      >
-        {uploading ? (
-          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
-        ) : (
-          <Upload className="mr-1.5 h-3.5 w-3.5" />
-        )}
-        Upload document
-      </Button>
+      {!readOnly && (
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full"
+          disabled={uploading}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {uploading ? (
+            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Upload className="mr-1.5 h-3.5 w-3.5" />
+          )}
+          Upload document
+        </Button>
+      )}
     </div>
   )
 }

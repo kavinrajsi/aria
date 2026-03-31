@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { cn } from '@/lib/utils'
-import type { Segment } from '@/hooks/use-whisper'
+import type { Segment } from '@/hooks/use-realtime'
 
 interface SavedTranscript {
   id: string
@@ -15,6 +15,7 @@ interface TranscriptFeedProps {
   savedTranscripts: SavedTranscript[]
   liveSegment: Segment | null
   currentUserName: string
+  micActive: boolean
   onToggleMic: () => void
 }
 
@@ -83,6 +84,7 @@ export function TranscriptFeed({
   savedTranscripts,
   liveSegment,
   currentUserName,
+  micActive,
   onToggleMic,
 }: TranscriptFeedProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -106,12 +108,16 @@ export function TranscriptFeed({
         {isEmpty ? (
           <div className="flex flex-col items-center justify-center h-full gap-2 text-center">
             <p className="text-sm text-muted-foreground">Aria is listening…</p>
-            <button
-              onClick={onToggleMic}
-              className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
-            >
-              Turn on your microphone to start transcribing.
-            </button>
+            {micActive ? (
+              <p className="text-xs text-muted-foreground">Start speaking to see your transcript.</p>
+            ) : (
+              <button
+                onClick={onToggleMic}
+                className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+              >
+                Turn on your microphone to start transcribing.
+              </button>
+            )}
           </div>
         ) : (
           <>

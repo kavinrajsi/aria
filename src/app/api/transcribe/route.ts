@@ -21,6 +21,9 @@ export async function POST(request: NextRequest) {
 
   const formData = await request.formData()
   const audio = formData.get('audio') as File | null
+  const meetingId = formData.get('meetingId') as string | null
+  const speakerLabel = formData.get('speakerLabel') as string | null
+  const timestampMs = Number(formData.get('timestampMs') ?? 0)
 
   if (!audio || audio.size === 0) {
     return NextResponse.json({ text: '' })
@@ -34,5 +37,26 @@ export async function POST(request: NextRequest) {
     language: 'en',
   })
 
-  return NextResponse.json({ text: transcription.text })
+  const text = transcription.text.trim()
+
+  // Persist to DB server-side so Realtime fires for all participants
+  let transcriptId: string | null = null
+  if (text && meetingId && speakerLabel) {
+    const { data, error } = await supabase
+      .from('transcripts')
+      .insert({
+        meeting_id: meetingId,
+        content: text,
+        speaker_label: speakerLabel,
+        user_id: user.id,
+        timestamp_ms: timestampMs,
+      })
+      .select('id')
+      .single()
+
+    if (error) console.error('[transcribe] db insert failed:', error.message)
+    else transcriptId = data?.id ?? null
+  }
+
+  return NextResponse.json({ text, transcriptId })
 }

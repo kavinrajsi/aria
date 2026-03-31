@@ -4,11 +4,12 @@ import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
-import { useWhisper } from '@/hooks/use-whisper'
+import { useRealtime } from '@/hooks/use-realtime'
 import { useTts } from '@/hooks/use-tts'
 import { TranscriptFeed } from './transcript-feed'
 import { AriaPanel } from './aria-panel'
 import { MeetingControls } from './meeting-controls'
+import { InlineRename } from '@/components/meetings/inline-rename'
 
 interface Meeting {
   id: string
@@ -35,6 +36,7 @@ interface MeetingRoomProps {
   currentUser: CurrentUser
   initialTranscripts: SavedTranscript[]
   hasElevenLabsKey: boolean
+  canEdit: boolean
 }
 
 interface AriaInteraction {
@@ -47,11 +49,12 @@ export function MeetingRoom({
   currentUser,
   initialTranscripts,
   hasElevenLabsKey,
+  canEdit,
 }: MeetingRoomProps) {
   const router = useRouter()
 
   // ── Audio (Web Speech API) ───────────────────────────────────────
-  const { active: micActive, segments, permissionError, toggle: toggleMic } = useWhisper()
+  const { active: micActive, segments, permissionError, toggle: toggleMic } = useRealtime()
 
   useEffect(() => {
     if (permissionError) toast.error(`Microphone: ${permissionError}`)
@@ -257,6 +260,21 @@ export function MeetingRoom({
 
   const liveSegment = segments.find((s) => !s.isFinal) ?? null
 
+  // Merge local final segments into the display list so transcripts appear
+  // immediately — before the DB insert → Realtime round-trip completes.
+  const displayTranscripts = (() => {
+    const savedIds = new Set(savedTranscripts.map((t) => t.id))
+    const localFinals = segments
+      .filter((s) => s.isFinal && !savedIds.has(s.id))
+      .map((s) => ({
+        id: s.id,
+        speaker_label: currentUser.name,
+        content: s.text,
+        timestamp_ms: s.timestampMs - meetingStartMs.current,
+      }))
+    return [...savedTranscripts, ...localFinals].sort((a, b) => a.timestamp_ms - b.timestamp_ms)
+  })()
+
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       {/* Header */}
@@ -266,7 +284,12 @@ export function MeetingRoom({
             <span className="text-xs font-bold text-primary-foreground">A</span>
           </div>
           <div className="min-w-0">
-            <h1 className="text-sm font-semibold truncate leading-none">{meeting.title}</h1>
+            <InlineRename
+              meetingId={meeting.id}
+              initialTitle={meeting.title}
+              canEdit={canEdit}
+              className="text-sm font-semibold leading-none"
+            />
             <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
               {micActive ? (
                 <>
@@ -290,9 +313,10 @@ export function MeetingRoom({
       {/* Body */}
       <div className="flex flex-1 overflow-hidden">
         <TranscriptFeed
-          savedTranscripts={savedTranscripts}
+          savedTranscripts={displayTranscripts}
           liveSegment={liveSegment}
           currentUserName={currentUser.name}
+          micActive={micActive}
           onToggleMic={toggleMic}
         />
         <AriaPanel

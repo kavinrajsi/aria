@@ -19,10 +19,10 @@ export default async function MeetingRoomPage({ params }: Props) {
     await Promise.all([
       supabase
         .from('meetings')
-        .select('id, title, status, ai_provider, agenda_items, briefing_notes')
+        .select('id, title, status, ai_provider, agenda_items, briefing_notes, organizer_id')
         .eq('id', id)
         .single(),
-      supabase.from('profiles').select('id, name').eq('id', user.id).single(),
+      supabase.from('profiles').select('id, name, role').eq('id', user.id).single(),
       supabase
         .from('transcripts')
         .select('id, speaker_label, content, timestamp_ms')
@@ -35,12 +35,15 @@ export default async function MeetingRoomPage({ params }: Props) {
   if (meeting.status !== 'active') redirect(`/meetings/${id}`)
   if (!profile) redirect('/sign-in')
 
+  const canEdit = profile.role === 'admin' || meeting.organizer_id === user.id
+
   return (
     <MeetingRoom
       meeting={meeting}
       currentUser={profile}
       initialTranscripts={transcripts ?? []}
       hasElevenLabsKey={!!elevenLabsSetting}
+      canEdit={canEdit}
     />
   )
 }

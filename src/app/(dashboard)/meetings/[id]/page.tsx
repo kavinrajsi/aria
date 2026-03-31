@@ -21,6 +21,7 @@ import { StartMeetingButton } from '@/components/meetings/start-meeting-button'
 import { DocumentUpload } from '@/components/meetings/document-upload'
 import { MeetingSummary } from '@/components/meetings/meeting-summary'
 import { TranscriptReplay } from '@/components/meetings/transcript-replay'
+import { InlineRename } from '@/components/meetings/inline-rename'
 
 export const metadata: Metadata = { title: 'Meeting' }
 
@@ -135,7 +136,12 @@ export default async function MeetingDetailPage({ params }: Props) {
             Meetings
           </Link>
           <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold">{meeting.title}</h1>
+            <InlineRename
+              meetingId={id}
+              initialTitle={meeting.title}
+              canEdit={canEdit}
+              className="text-xl font-semibold"
+            />
             <MeetingStatusBadge status={meeting.status} />
           </div>
         </div>
@@ -262,6 +268,7 @@ export default async function MeetingDetailPage({ params }: Props) {
                 <DocumentUpload
                   meetingId={id}
                   initialDocuments={documents ?? []}
+                  readOnly={isCompleted}
                 />
               </CardContent>
             </Card>
