@@ -80,7 +80,7 @@ export type Database = {
           scheduled_at: string
           organizer_id: string | null
           status: 'scheduled' | 'active' | 'completed' | 'cancelled'
-          ai_provider: 'anthropic' | 'openai' | null
+          ai_provider: 'openai' | null
           agenda_items: string[]
           briefing_notes: string | null
           created_at: string
@@ -92,7 +92,7 @@ export type Database = {
           scheduled_at: string
           organizer_id?: string | null
           status?: 'scheduled' | 'active' | 'completed' | 'cancelled'
-          ai_provider?: 'anthropic' | 'openai' | null
+          ai_provider?: 'openai' | null
           agenda_items?: string[]
           briefing_notes?: string | null
           created_at?: string
@@ -103,7 +103,7 @@ export type Database = {
           scheduled_at?: string
           organizer_id?: string | null
           status?: 'scheduled' | 'active' | 'completed' | 'cancelled'
-          ai_provider?: 'anthropic' | 'openai' | null
+          ai_provider?: 'openai' | null
           agenda_items?: string[]
           briefing_notes?: string | null
           updated_at?: string

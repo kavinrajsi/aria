@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server'
 import { streamText } from 'ai'
-import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createClient } from '@/lib/supabase/server'
 
@@ -29,11 +28,10 @@ export async function POST(req: NextRequest) {
 
   if (meetingError || !meeting) return new Response('Meeting not found', { status: 404 })
 
-  const keyName = meeting.ai_provider === 'openai' ? 'OPENAI_API_KEY' : 'ANTHROPIC_API_KEY'
   const { data: setting, error: settingError } = await supabase
     .from('settings')
     .select('value')
-    .eq('key', keyName)
+    .eq('key', 'OPENAI_API_KEY')
     .single()
 
   if (settingError || !setting?.value) return new Response('AI provider not configured', { status: 503 })
@@ -72,10 +70,7 @@ export async function POST(req: NextRequest) {
     .filter(Boolean)
     .join('\n\n')
 
-  const model =
-    meeting.ai_provider === 'openai'
-      ? createOpenAI({ apiKey: setting.value })('gpt-4o-mini')
-      : createAnthropic({ apiKey: setting.value })('claude-sonnet-4.6')
+  const model = createOpenAI({ apiKey: setting.value })('gpt-4o-mini')
 
   const result = streamText({
     model,
@@ -96,8 +91,8 @@ export async function POST(req: NextRequest) {
         supabase.from('token_usage').insert({
           meeting_id: meetingId,
           user_id: user.id,
-          provider: meeting.ai_provider === 'openai' ? 'openai' : 'anthropic',
-          model: meeting.ai_provider === 'openai' ? 'gpt-4o-mini' : 'claude-sonnet-4.6',
+          provider: 'openai',
+          model: 'gpt-4o-mini',
           operation: 'aria_query',
           input_tokens: usage.promptTokens ?? 0,
           output_tokens: usage.completionTokens ?? 0,

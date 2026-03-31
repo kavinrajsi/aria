@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { generateText } from 'ai'
-import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
 import { createClient } from '@/lib/supabase/server'
 
@@ -79,27 +78,15 @@ export async function POST(_req: NextRequest, { params }: Props) {
   }
 
   // Resolve AI provider — use meeting's preferred, fall back to whatever is configured
-  const preferredKey = meeting.ai_provider === 'openai' ? 'OPENAI_API_KEY' : 'ANTHROPIC_API_KEY'
-  const fallbackKey = meeting.ai_provider === 'openai' ? 'ANTHROPIC_API_KEY' : 'OPENAI_API_KEY'
-
-  const { data: settings } = await supabase
+  const { data: setting } = await supabase
     .from('settings')
-    .select('key, value')
-    .in('key', ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY'])
+    .select('value')
+    .eq('key', 'OPENAI_API_KEY')
+    .single()
 
-  const settingsMap = Object.fromEntries((settings ?? []).map((s) => [s.key, s.value]))
+  if (!setting?.value) return NextResponse.json({ error: 'No AI provider configured' }, { status: 503 })
 
-  const apiKey = settingsMap[preferredKey] ?? settingsMap[fallbackKey]
-  if (!apiKey) return NextResponse.json({ error: 'No AI provider configured' }, { status: 503 })
-
-  const useOpenAI = !!(
-    (meeting.ai_provider === 'openai' && settingsMap['OPENAI_API_KEY']) ||
-    (!settingsMap[preferredKey] && meeting.ai_provider !== 'openai')
-  )
-
-  const model = useOpenAI
-    ? createOpenAI({ apiKey })('gpt-4o-mini')
-    : createAnthropic({ apiKey })('claude-sonnet-4.6')
+  const model = createOpenAI({ apiKey: setting.value })('gpt-4o-mini')
 
   // Build transcript text (cap at 40 000 chars to stay within context)
   let transcriptText = transcripts
@@ -161,8 +148,8 @@ ${transcriptText}`
     supabase.from('token_usage').insert({
       meeting_id: meetingId,
       user_id: user.id,
-      provider: useOpenAI ? 'openai' : 'anthropic',
-      model: useOpenAI ? 'gpt-4o-mini' : 'claude-sonnet-4.6',
+      provider: 'openai',
+      model: 'gpt-4o-mini',
       operation: 'summary',
       input_tokens: usage.promptTokens ?? 0,
       output_tokens: usage.completionTokens ?? 0,

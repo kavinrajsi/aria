@@ -14,7 +14,7 @@ import { InlineRename } from '@/components/meetings/inline-rename'
 interface Meeting {
   id: string
   title: string
-  ai_provider: 'anthropic' | 'openai' | null
+  ai_provider: 'openai' | null
   agenda_items: string[]
   briefing_notes: string | null
 }

@@ -14,13 +14,11 @@ import {
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { MeetingStatusBadge } from '@/components/meetings/meeting-status-badge'
 import { StartMeetingButton } from '@/components/meetings/start-meeting-button'
 import { DocumentUpload } from '@/components/meetings/document-upload'
-import { MeetingSummary } from '@/components/meetings/meeting-summary'
-import { TranscriptReplay } from '@/components/meetings/transcript-replay'
+import { TranscriptCard } from '@/components/meetings/transcript-card'
 import { InlineRename } from '@/components/meetings/inline-rename'
 
 export const metadata: Metadata = { title: 'Meeting' }
@@ -73,7 +71,7 @@ export default async function MeetingDetailPage({ params }: Props) {
     { data: meetingActionItems },
     { data: replayTranscripts },
   ] = await Promise.all([
-    supabase.from('settings').select('key').in('key', ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY']),
+    supabase.from('settings').select('key').eq('key', 'OPENAI_API_KEY'),
     supabase
       .from('documents')
       .select('id, file_name, file_type, uploaded_at')
@@ -102,10 +100,8 @@ export default async function MeetingDetailPage({ params }: Props) {
       : Promise.resolve({ data: [], error: null }),
   ])
 
-  const configuredKeys = new Set((providerSettings ?? []).map((r: { key: string }) => r.key))
   const availableProviders = {
-    anthropic: configuredKeys.has('ANTHROPIC_API_KEY'),
-    openai: configuredKeys.has('OPENAI_API_KEY'),
+    openai: (providerSettings ?? []).length > 0,
   }
 
   const organizer = Array.isArray(meeting.organizer)
@@ -124,10 +120,10 @@ export default async function MeetingDetailPage({ params }: Props) {
   const scheduledAt = new Date(meeting.scheduled_at)
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="p-6 space-y-6">
       {/* Back + header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
+      <div className="flex items-start justify-between gap-4 w-full">
+        <div className="space-y-1 flex-1 min-w-0">
           <Link
             href="/meetings"
             className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2"
@@ -143,6 +139,50 @@ export default async function MeetingDetailPage({ params }: Props) {
               className="text-xl font-semibold"
             />
             <MeetingStatusBadge status={meeting.status} />
+          </div>
+          <div className="flex flex-col gap-0.5 mt-1">
+            {/* Line 1: date · time · organised by */}
+            <div className="flex items-center gap-2.5 text-xs text-muted-foreground flex-wrap">
+              <Calendar className="h-3.5 w-3.5 shrink-0" />
+              <span>{format(scheduledAt, 'EEEE, MMMM d, yyyy')}</span>
+              <span>·</span>
+              <Clock className="h-3.5 w-3.5 shrink-0" />
+              <span>{format(scheduledAt, 'h:mm a')}</span>
+              {organizer && (
+                <>
+                  <span>·</span>
+                  <Users className="h-3.5 w-3.5 shrink-0" />
+                  <span>Organised by <span className="font-medium text-foreground">{organizer.name}</span></span>
+                </>
+              )}
+            </div>
+            {/* Line 2: participants · documents */}
+            <div className="flex items-center gap-2.5 text-xs text-muted-foreground flex-wrap">
+              <span className="flex -space-x-1.5">
+                {participants.slice(0, 4).map((mp: {
+                  id: string
+                  user_id: string
+                  profile: { id: string; name: string; email: string } | null
+                }) => {
+                  const p = mp.profile
+                  if (!p) return null
+                  const initials = p.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+                  return (
+                    <Avatar key={mp.id} className="h-4 w-4 border border-background">
+                      <AvatarFallback className="text-[8px]">{initials}</AvatarFallback>
+                    </Avatar>
+                  )
+                })}
+              </span>
+              <span>{participants.length} participant{participants.length !== 1 ? 's' : ''}</span>
+              <span>·</span>
+              <FileText className="h-3.5 w-3.5 shrink-0" />
+              {documents && documents.length > 0 ? (
+                <span>{documents.map(d => d.file_name).join(', ')}</span>
+              ) : (
+                <span>0 documents</span>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -171,81 +211,6 @@ export default async function MeetingDetailPage({ params }: Props) {
       <div className="grid gap-6 md:grid-cols-5">
         {/* Main content */}
         <div className="md:col-span-2 space-y-6">
-          {/* Summary — only for completed meetings */}
-          {isCompleted && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <span className="h-4 w-4 text-muted-foreground">✦</span>
-                  Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <MeetingSummary
-                  meetingId={id}
-                  canGenerate={canEdit}
-                  initialSummary={existingSummary ?? null}
-                  initialActionItems={meetingActionItems ?? []}
-                />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Details */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm font-medium">Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2 text-sm">
-                <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span>{format(scheduledAt, 'EEEE, MMMM d, yyyy')}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span>{format(scheduledAt, 'h:mm a')}</span>
-              </div>
-              {organizer && (
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span>
-                    Organised by{' '}
-                    <span className="font-medium">{organizer.name}</span>
-                  </span>
-                </div>
-              )}
-              {participants.length > 0 && (
-                <>
-                  <Separator />
-                  <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground font-medium">
-                      Participants ({participants.length})
-                    </p>
-                    {participants.map((mp: {
-                      id: string
-                      user_id: string
-                      profile: { id: string; name: string; email: string } | null
-                    }) => {
-                      const p = mp.profile
-                      if (!p) return null
-                      const initials = p.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
-                      return (
-                        <div key={mp.id} className="flex items-center gap-2.5">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm truncate flex-1">{p.name}</span>
-                          {organizer?.id === p.id && (
-                            <span className="text-xs text-muted-foreground shrink-0">Organiser</span>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
-            </CardContent>
-          </Card>
 
           {/* Agenda */}
           {meeting.agenda_items.length > 0 && (
@@ -285,47 +250,36 @@ export default async function MeetingDetailPage({ params }: Props) {
             </Card>
           )}
 
-          {/* Documents — pre-meeting reference files for Aria */}
-          {canEdit && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  Documents
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <DocumentUpload
-                  meetingId={id}
-                  initialDocuments={documents ?? []}
-                  readOnly={isCompleted}
-                />
-              </CardContent>
-            </Card>
+          {/* Documents — upload UI for pre-meeting reference files */}
+          {canEdit && !isCompleted && (
+            <DocumentUpload
+              meetingId={id}
+              initialDocuments={documents ?? []}
+              readOnly={false}
+            />
           )}
 
         </div>
 
-        {/* Right sidebar */}
-        <div className="md:col-span-3 space-y-6">
-          {/* Transcript replay — only for completed meetings */}
-          {isCompleted && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium">Transcript</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <TranscriptReplay transcripts={replayTranscripts ?? []} />
-              </CardContent>
-            </Card>
-          )}
-          {canEdit && meeting.status === 'scheduled' && (
-            <Button variant="outline" size="sm" className="w-full" asChild>
+        {canEdit && meeting.status === 'scheduled' && (
+          <div className="md:col-span-3 flex items-start">
+            <Button variant="outline" size="sm" asChild>
               <Link href={`/meetings/${id}/edit`}>Manage participants</Link>
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+
+      {/* Transcript — full width */}
+      {isCompleted && (
+        <TranscriptCard
+          transcripts={replayTranscripts ?? []}
+          meetingId={id}
+          canGenerate={canEdit}
+          initialSummary={existingSummary ?? null}
+          initialActionItems={meetingActionItems ?? []}
+        />
+      )}
     </div>
   )
 }

@@ -18,10 +18,9 @@ import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
-type Provider = 'anthropic' | 'openai'
+type Provider = 'openai'
 
 interface AvailableProviders {
-  anthropic: boolean
   openai: boolean
 }
 
@@ -31,8 +30,7 @@ interface StartMeetingButtonProps {
 }
 
 const PROVIDER_LABELS: Record<Provider, { name: string; model: string }> = {
-  anthropic: { name: 'Claude (Anthropic)', model: 'claude-sonnet-4-6' },
-  openai: { name: 'ChatGPT (OpenAI)', model: 'gpt-4o' },
+  openai: { name: 'OpenAI (ChatGPT)', model: 'gpt-4o-mini' },
 }
 
 export function StartMeetingButton({ meetingId, availableProviders }: StartMeetingButtonProps) {
@@ -87,7 +85,7 @@ export function StartMeetingButton({ meetingId, availableProviders }: StartMeeti
             <BotMessageSquare className="h-8 w-8 text-muted-foreground" />
             <p className="text-sm font-medium">No AI providers configured</p>
             <p className="text-xs text-muted-foreground">
-              Add an Anthropic or OpenAI API key in Settings before starting a meeting.
+              Add an OpenAI API key in Settings before starting a meeting.
             </p>
           </div>
         ) : (

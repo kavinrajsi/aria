@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 
-const API_KEY_NAMES = ['DEEPGRAM_API_KEY', 'ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'ELEVENLABS_API_KEY'] as const
+const API_KEY_NAMES = ['DEEPGRAM_API_KEY', 'OPENAI_API_KEY', 'ELEVENLABS_API_KEY'] as const
 export type ApiKeyName = (typeof API_KEY_NAMES)[number]
 
 export async function getApiKeyStatuses(): Promise<Record<ApiKeyName, boolean>> {
@@ -16,7 +16,6 @@ export async function getApiKeyStatuses(): Promise<Record<ApiKeyName, boolean>> 
   const configured = new Set((data ?? []).map((r: { key: string }) => r.key))
   return {
     DEEPGRAM_API_KEY: configured.has('DEEPGRAM_API_KEY'),
-    ANTHROPIC_API_KEY: configured.has('ANTHROPIC_API_KEY'),
     OPENAI_API_KEY: configured.has('OPENAI_API_KEY'),
     ELEVENLABS_API_KEY: configured.has('ELEVENLABS_API_KEY'),
   }
@@ -32,7 +31,6 @@ export async function getApiKeyValues(): Promise<Record<ApiKeyName, string | nul
   const map = Object.fromEntries((data ?? []).map((r: { key: string; value: string }) => [r.key, r.value]))
   return {
     DEEPGRAM_API_KEY: map['DEEPGRAM_API_KEY'] ?? null,
-    ANTHROPIC_API_KEY: map['ANTHROPIC_API_KEY'] ?? null,
     OPENAI_API_KEY: map['OPENAI_API_KEY'] ?? null,
     ELEVENLABS_API_KEY: map['ELEVENLABS_API_KEY'] ?? null,
   }

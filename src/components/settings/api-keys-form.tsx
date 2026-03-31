@@ -15,14 +15,9 @@ const KEYS: { name: ApiKeyName; label: string; description: string }[] = [
     description: 'Real-time speech-to-text transcription during meetings.',
   },
   {
-    name: 'ANTHROPIC_API_KEY',
-    label: 'Anthropic (Claude)',
-    description: 'AI summaries, action items, and Aria assistant responses.',
-  },
-  {
     name: 'OPENAI_API_KEY',
-    label: 'OpenAI (ChatGPT)',
-    description: 'Alternative AI provider for summaries, action items, and Aria responses.',
+    label: 'OpenAI',
+    description: 'AI summaries, action items, and Aria assistant responses.',
   },
   {
     name: 'ELEVENLABS_API_KEY',

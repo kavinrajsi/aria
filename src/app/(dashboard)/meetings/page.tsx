@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
-import { MeetingCard } from '@/components/meetings/meeting-card'
+import { MeetingsView } from '@/components/meetings/meetings-view'
 
 export const metadata: Metadata = { title: 'Meetings' }
 
@@ -29,7 +29,7 @@ export default async function MeetingsPage() {
       organizer:profiles!organizer_id(id, name, email),
       participant_count:meeting_participants(count)
     `)
-    .order('scheduled_at', { ascending: false })
+    .order('created_at', { ascending: false })
 
   if (!isAdmin) {
     const { data: participations } = await supabase
@@ -59,38 +59,29 @@ export default async function MeetingsPage() {
   }))
 
   return (
-    <div className="p-6 space-y-6">
-      <PageHeader isAdmin={isAdmin} />
-
+    <div className="p-6">
       {formattedMeetings.length === 0 ? (
-        <EmptyState isAdmin={isAdmin} />
+        <>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-xl font-semibold">Meetings</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {isAdmin ? 'All meetings across your organisation' : 'Your scheduled meetings'}
+              </p>
+            </div>
+            {isAdmin && (
+              <Button asChild size="sm">
+                <Link href="/meetings/new">
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  New meeting
+                </Link>
+              </Button>
+            )}
+          </div>
+          <EmptyState isAdmin={isAdmin} />
+        </>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {formattedMeetings.map((meeting) => (
-            <MeetingCard key={meeting.id} meeting={meeting} />
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function PageHeader({ isAdmin }: { isAdmin: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <div>
-        <h1 className="text-xl font-semibold">Meetings</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          {isAdmin ? 'All meetings across your organisation' : 'Your scheduled meetings'}
-        </p>
-      </div>
-      {isAdmin && (
-        <Button asChild size="sm">
-          <Link href="/meetings/new">
-            <Plus className="mr-1.5 h-4 w-4" />
-            New meeting
-          </Link>
-        </Button>
+        <MeetingsView meetings={formattedMeetings} isAdmin={isAdmin} />
       )}
     </div>
   )

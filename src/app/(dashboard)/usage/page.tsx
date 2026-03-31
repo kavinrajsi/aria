@@ -7,8 +7,7 @@ export const metadata: Metadata = { title: 'Token Usage' }
 
 // Approximate pricing per 1M tokens (USD)
 const PRICING: Record<string, { input: number; output: number }> = {
-  'claude-sonnet-4.6': { input: 3.0, output: 15.0 },
-  'gpt-4o-mini':       { input: 0.15, output: 0.6 },
+  'gpt-4o-mini': { input: 0.15, output: 0.6 },
 }
 
 function estimateCost(model: string, inputTokens: number, outputTokens: number): number {
@@ -29,7 +28,7 @@ function formatCost(usd: number): string {
 }
 
 interface ProviderStat {
-  provider: 'anthropic' | 'openai'
+  provider: 'openai'
   model: string
   inputTokens: number
   outputTokens: number
@@ -40,8 +39,7 @@ interface ProviderStat {
 }
 
 const PROVIDER_META: Record<string, { label: string; color: string; bg: string }> = {
-  anthropic: { label: 'Anthropic',  color: 'bg-amber-500',  bg: 'bg-amber-500/10' },
-  openai:    { label: 'OpenAI',     color: 'bg-indigo-500', bg: 'bg-indigo-500/10' },
+  openai: { label: 'OpenAI', color: 'bg-indigo-500', bg: 'bg-indigo-500/10' },
 }
 
 export default async function UsagePage() {
@@ -67,7 +65,7 @@ export default async function UsagePage() {
   for (const row of rows ?? []) {
     if (!statsMap[row.provider]) {
       statsMap[row.provider] = {
-        provider: row.provider as 'anthropic' | 'openai',
+        provider: row.provider as 'openai',
         model: row.model,
         inputTokens: 0,
         outputTokens: 0,

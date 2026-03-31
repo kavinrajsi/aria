@@ -20,7 +20,7 @@ interface AriaPanelProps {
   response: string
   loading: boolean
   history: Interaction[]
-  aiProvider: 'anthropic' | 'openai' | null
+  aiProvider: 'openai' | null
   // TTS
   hasVoice: boolean
   voiceEnabled: boolean
@@ -30,7 +30,6 @@ interface AriaPanelProps {
 }
 
 const PROVIDER_LABEL: Record<string, string> = {
-  anthropic: 'Claude',
   openai: 'ChatGPT',
 }
 
