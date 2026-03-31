@@ -1,8 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+import { useTransition } from 'react'
 import { format } from 'date-fns'
 import { Mic, MicOff, Shield, User } from 'lucide-react'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -15,6 +17,7 @@ import {
 } from '@/components/ui/table'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import type { Profile, VoiceProfile } from '@/lib/types/database'
+import { changeParticipantRole } from '@/lib/actions/participants'
 
 type ParticipantWithVoice = Profile & {
   voice_profile: Pick<VoiceProfile, 'enrollment_status' | 'samples_count'> | null
@@ -33,9 +36,20 @@ const enrollmentConfig: Record<
 interface ParticipantsTableProps {
   participants: ParticipantWithVoice[]
   currentUserId: string
+  isAdmin: boolean
 }
 
-export function ParticipantsTable({ participants, currentUserId }: ParticipantsTableProps) {
+export function ParticipantsTable({ participants, currentUserId, isAdmin }: ParticipantsTableProps) {
+  const [isPending, startTransition] = useTransition()
+
+  function handleRoleChange(userId: string, newRole: 'admin' | 'member') {
+    startTransition(async () => {
+      const result = await changeParticipantRole(userId, newRole)
+      if (result.error) toast.error(result.error)
+      else toast.success(`Role updated to ${newRole}.`)
+    })
+  }
+
   return (
     <div className="rounded-lg border">
       <Table>
@@ -81,13 +95,28 @@ export function ParticipantsTable({ participants, currentUserId }: ParticipantsT
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">{p.email}</TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    {p.role === 'admin' ? (
-                      <Shield className="h-3.5 w-3.5" />
-                    ) : (
-                      <User className="h-3.5 w-3.5" />
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      {p.role === 'admin' ? (
+                        <Shield className="h-3.5 w-3.5" />
+                      ) : (
+                        <User className="h-3.5 w-3.5" />
+                      )}
+                      <span className="capitalize">{p.role}</span>
+                    </div>
+                    {isAdmin && !isCurrentUser && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={isPending}
+                        className="h-6 px-2 text-xs text-muted-foreground"
+                        onClick={() =>
+                          handleRoleChange(p.id, p.role === 'admin' ? 'member' : 'admin')
+                        }
+                      >
+                        {p.role === 'admin' ? 'Remove admin' : 'Make admin'}
+                      </Button>
                     )}
-                    <span className="capitalize">{p.role}</span>
                   </div>
                 </TableCell>
                 <TableCell>

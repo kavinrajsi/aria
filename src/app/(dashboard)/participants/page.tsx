@@ -45,7 +45,7 @@ export default async function ParticipantsPage() {
           Team members and their voice enrollment status.
         </p>
       </div>
-      <ParticipantsTable participants={formatted} currentUserId={user.id} />
+      <ParticipantsTable participants={formatted} currentUserId={user.id} isAdmin />
     </div>
   )
 }

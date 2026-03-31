@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { getApiKeyStatuses, getApiKeyValues } from '@/lib/actions/settings'
 import { ApiKeysForm } from '@/components/settings/api-keys-form'
+import { ChangePasswordForm } from '@/components/settings/change-password-form'
 
 export const metadata: Metadata = { title: 'Settings' }
 
@@ -100,6 +101,16 @@ export default async function SettingsPage() {
               No voice profile yet. Ask an admin to start your enrollment.
             </p>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">Password</CardTitle>
+          <CardDescription>Change your account password.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ChangePasswordForm />
         </CardContent>
       </Card>
 
