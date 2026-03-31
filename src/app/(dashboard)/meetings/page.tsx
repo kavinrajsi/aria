@@ -87,6 +87,27 @@ export default async function MeetingsPage() {
   )
 }
 
+function PageHeader({ isAdmin }: { isAdmin: boolean }) {
+  return (
+    <div className="flex items-center justify-between mb-6">
+      <div>
+        <h1 className="text-xl font-semibold">Meetings</h1>
+        <p className="text-sm text-muted-foreground mt-0.5">
+          {isAdmin ? 'All meetings across your organisation' : 'Your scheduled meetings'}
+        </p>
+      </div>
+      {isAdmin && (
+        <Button asChild size="sm">
+          <Link href="/meetings/new">
+            <Plus className="mr-1.5 h-4 w-4" />
+            New meeting
+          </Link>
+        </Button>
+      )}
+    </div>
+  )
+}
+
 function EmptyState({ isAdmin }: { isAdmin: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border border-dashed py-16 text-center">

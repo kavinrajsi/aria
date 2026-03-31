@@ -70,8 +70,12 @@ export default async function MeetingDetailPage({ params }: Props) {
     { data: existingSummary },
     { data: meetingActionItems },
     { data: replayTranscripts },
+    { data: recordingRows },
   ] = await Promise.all([
-    supabase.from('settings').select('key').eq('key', 'OPENAI_API_KEY'),
+    // Only fetch provider settings for users who can start/edit the meeting
+    canEdit
+      ? supabase.from('settings').select('key').eq('key', 'OPENAI_API_KEY')
+      : Promise.resolve({ data: [], error: null }),
     supabase
       .from('documents')
       .select('id, file_name, file_type, uploaded_at')
@@ -98,7 +102,25 @@ export default async function MeetingDetailPage({ params }: Props) {
           .eq('meeting_id', id)
           .order('timestamp_ms', { ascending: true })
       : Promise.resolve({ data: [], error: null }),
+    isCompleted
+      ? supabase
+          .from('audio_recordings')
+          .select('id, storage_url, duration_seconds, file_size_bytes, created_at')
+          .eq('meeting_id', id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+      : Promise.resolve({ data: [], error: null }),
   ])
+
+  // Generate a 1-hour signed URL for the latest recording
+  let recordingSignedUrl: string | null = null
+  const latestRecording = recordingRows?.[0] ?? null
+  if (latestRecording) {
+    const { data: signed } = await supabase.storage
+      .from('meeting-recordings')
+      .createSignedUrl(latestRecording.storage_url, 3600)
+    recordingSignedUrl = signed?.signedUrl ?? null
+  }
 
   const availableProviders = {
     openai: (providerSettings ?? []).length > 0,
@@ -116,6 +138,10 @@ export default async function MeetingDetailPage({ params }: Props) {
     ...mp,
     profile: Array.isArray(mp.profile) ? mp.profile[0] ?? null : mp.profile,
   }))
+
+  // App-layer authorization: user must be admin, organizer, or a participant
+  const isParticipant = participants.some((mp) => mp.user_id === user.id)
+  if (!isAdmin && !isOrganizer && !isParticipant) notFound()
 
   const scheduledAt = new Date(meeting.scheduled_at)
 
