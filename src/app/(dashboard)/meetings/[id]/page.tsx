@@ -7,6 +7,7 @@ import {
   Calendar,
   Clock,
   FileText,
+  Mic,
   Pencil,
   Play,
   Users,
@@ -295,6 +296,35 @@ export default async function MeetingDetailPage({ params }: Props) {
           </div>
         )}
       </div>
+
+      {/* Recording player — full width */}
+      {isCompleted && recordingSignedUrl && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Mic className="h-4 w-4 text-muted-foreground" />
+              Recording
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
+            <audio
+              controls
+              src={recordingSignedUrl}
+              className="w-full h-10"
+              preload="metadata"
+            />
+            {latestRecording?.file_size_bytes && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {(latestRecording.file_size_bytes / (1024 * 1024)).toFixed(1)} MB
+                {latestRecording.duration_seconds
+                  ? ` · ${Math.floor(latestRecording.duration_seconds / 60)}m ${latestRecording.duration_seconds % 60}s`
+                  : ''}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Transcript — full width */}
       {isCompleted && (

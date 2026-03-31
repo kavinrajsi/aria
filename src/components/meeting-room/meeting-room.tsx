@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { useRealtime } from '@/hooks/use-realtime'
+import { useRecording } from '@/hooks/use-recording'
 import { useTts } from '@/hooks/use-tts'
 import { TranscriptFeed } from './transcript-feed'
 import { AriaPanel } from './aria-panel'
@@ -55,6 +56,12 @@ export function MeetingRoom({
 
   // ── Audio (Web Speech API) ───────────────────────────────────────
   const { active: micActive, segments, permissionError, toggle: toggleMic } = useRealtime()
+  const { start: startRecording, stop: stopRecording } = useRecording()
+
+  // Start recording the moment the mic goes active
+  useEffect(() => {
+    if (micActive) startRecording()
+  }, [micActive, startRecording])
 
   useEffect(() => {
     if (permissionError) toast.error(`Microphone: ${permissionError}`)
@@ -249,6 +256,16 @@ export function MeetingRoom({
 
   function endMeeting() {
     startEnd(async () => {
+      // Stop recording and upload in the background — don't block the end flow
+      const blob = await stopRecording()
+      if (blob) {
+        const form = new FormData()
+        form.append('audio', blob, 'recording.webm')
+        fetch(`/api/meetings/${meeting.id}/recording`, { method: 'POST', body: form }).catch(
+          () => null
+        )
+      }
+
       const res = await fetch(`/api/meetings/${meeting.id}/end`, { method: 'POST' })
       if (res.ok) {
         router.push(`/meetings/${meeting.id}`)
