@@ -151,8 +151,8 @@ ${transcriptText}`
       provider: 'openai',
       model: 'gpt-4o-mini',
       operation: 'summary',
-      input_tokens: usage.promptTokens ?? 0,
-      output_tokens: usage.completionTokens ?? 0,
+      input_tokens: usage.inputTokens ?? 0,
+      output_tokens: usage.outputTokens ?? 0,
     }).then(({ error }) => {
       if (error) console.error('[summarise] token_usage insert:', error.message)
     })
