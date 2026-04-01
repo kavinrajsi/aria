@@ -18,10 +18,12 @@ import { Label } from '@/components/ui/label'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
 
-type Provider = 'openai'
+type Provider = 'openai' | 'elevenlabs' | 'sarvam'
 
 interface AvailableProviders {
   openai: boolean
+  elevenlabs: boolean
+  sarvam: boolean
 }
 
 interface StartMeetingButtonProps {
@@ -30,7 +32,9 @@ interface StartMeetingButtonProps {
 }
 
 const PROVIDER_LABELS: Record<Provider, { name: string; model: string }> = {
-  openai: { name: 'OpenAI (ChatGPT)', model: 'gpt-4o-mini' },
+  openai: { name: 'OpenAI Whisper', model: 'Realtime API' },
+  elevenlabs: { name: 'ElevenLabs Scribe', model: 'scribe_v2' },
+  sarvam: { name: 'Sarvam AI', model: 'saaras:v3' },
 }
 
 export function StartMeetingButton({ meetingId, availableProviders }: StartMeetingButtonProps) {
@@ -85,7 +89,7 @@ export function StartMeetingButton({ meetingId, availableProviders }: StartMeeti
             <BotMessageSquare className="h-8 w-8 text-muted-foreground" />
             <p className="text-sm font-medium">No AI providers configured</p>
             <p className="text-xs text-muted-foreground">
-              Add an OpenAI API key in Settings before starting a meeting.
+              Add an API key (OpenAI, ElevenLabs, or Sarvam) in Settings before starting a meeting.
             </p>
           </div>
         ) : (

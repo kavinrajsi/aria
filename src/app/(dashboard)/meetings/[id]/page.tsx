@@ -75,7 +75,7 @@ export default async function MeetingDetailPage({ params }: Props) {
   ] = await Promise.all([
     // Only fetch provider settings for users who can start/edit the meeting
     canEdit
-      ? supabase.from('settings').select('key').eq('key', 'OPENAI_API_KEY')
+      ? supabase.from('settings').select('key').in('key', ['OPENAI_API_KEY', 'ELEVENLABS_API_KEY', 'SARVAM_API_KEY'])
       : Promise.resolve({ data: [], error: null }),
     supabase
       .from('documents')
@@ -123,8 +123,11 @@ export default async function MeetingDetailPage({ params }: Props) {
     recordingSignedUrl = signed?.signedUrl ?? null
   }
 
+  const configuredKeys = new Set((providerSettings ?? []).map((r: { key: string }) => r.key))
   const availableProviders = {
-    openai: (providerSettings ?? []).length > 0,
+    openai: configuredKeys.has('OPENAI_API_KEY'),
+    elevenlabs: configuredKeys.has('ELEVENLABS_API_KEY'),
+    sarvam: configuredKeys.has('SARVAM_API_KEY'),
   }
 
   const organizer = Array.isArray(meeting.organizer)
