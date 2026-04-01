@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
-import { useRealtime } from '@/hooks/use-realtime'
+import { useTranscription, type SttProvider } from '@/hooks/use-transcription'
 import { useRecording } from '@/hooks/use-recording'
 import { useTts } from '@/hooks/use-tts'
 import { TranscriptFeed } from './transcript-feed'
@@ -15,7 +15,7 @@ import { InlineRename } from '@/components/meetings/inline-rename'
 interface Meeting {
   id: string
   title: string
-  ai_provider: 'openai' | null
+  ai_provider: SttProvider | null
   agenda_items: string[]
   briefing_notes: string | null
 }
@@ -54,8 +54,10 @@ export function MeetingRoom({
 }: MeetingRoomProps) {
   const router = useRouter()
 
-  // ── Audio (Web Speech API) ───────────────────────────────────────
-  const { active: micActive, segments, permissionError, toggle: toggleMic } = useRealtime()
+  // ── Audio (provider-based STT) ───────────────────────────────────
+  const { active: micActive, segments, permissionError, toggle: toggleMic } = useTranscription(
+    meeting.ai_provider ?? 'openai'
+  )
   const { start: startRecording, stop: stopRecording } = useRecording()
 
   // Start recording the moment the mic goes active

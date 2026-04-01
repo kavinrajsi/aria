@@ -20,7 +20,7 @@ interface AriaPanelProps {
   response: string
   loading: boolean
   history: Interaction[]
-  aiProvider: 'openai' | null
+  aiProvider: string | null
   // TTS
   hasVoice: boolean
   voiceEnabled: boolean

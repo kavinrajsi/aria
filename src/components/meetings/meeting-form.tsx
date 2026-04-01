@@ -25,8 +25,21 @@ import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import type { Profile } from '@/lib/types/database'
+
+const STT_PROVIDERS = [
+  { value: 'openai', label: 'OpenAI Whisper', description: 'Default — real-time via OpenAI Realtime API' },
+  { value: 'elevenlabs', label: 'ElevenLabs Scribe', description: 'Low-latency STT with 90+ languages' },
+  { value: 'sarvam', label: 'Sarvam AI', description: 'Optimised for Indian languages (22 supported)' },
+] as const
 
 const schema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters'),
@@ -35,6 +48,7 @@ const schema = z.object({
   agenda_items: z.array(z.object({ value: z.string() })),
   briefing_notes: z.string().optional(),
   participant_ids: z.array(z.string()),
+  stt_provider: z.enum(['openai', 'elevenlabs', 'sarvam']),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -70,6 +84,7 @@ export function MeetingForm({
       agenda_items: [],
       briefing_notes: '',
       participant_ids: [organizerId],
+      stt_provider: 'openai',
       ...defaultValues,
     },
   })
@@ -93,6 +108,7 @@ export function MeetingForm({
       title: values.title,
       scheduled_at: scheduledAt.toISOString(),
       organizer_id: organizerId,
+      ai_provider: values.stt_provider,
       agenda_items: values.agenda_items
         .map((item) => item.value.trim())
         .filter(Boolean),
@@ -258,6 +274,34 @@ export function MeetingForm({
           placeholder="e.g. This is the first review since the product launch. Focus on retention metrics and roadmap priorities."
           {...register('briefing_notes')}
         />
+      </div>
+
+      <Separator />
+
+      {/* Transcription provider */}
+      <div className="space-y-1.5">
+        <Label>Transcription provider</Label>
+        <p className="text-xs text-muted-foreground">
+          Choose which speech-to-text engine Aria uses during this meeting.
+        </p>
+        <Select
+          value={watch('stt_provider')}
+          onValueChange={(v) => setValue('stt_provider', v as FormValues['stt_provider'])}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {STT_PROVIDERS.map((p) => (
+              <SelectItem key={p.value} value={p.value}>
+                <div>
+                  <span className="font-medium">{p.label}</span>
+                  <span className="text-muted-foreground ml-2 text-xs">{p.description}</span>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Separator />

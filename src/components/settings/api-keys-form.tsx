@@ -22,7 +22,12 @@ const KEYS: { name: ApiKeyName; label: string; description: string }[] = [
   {
     name: 'ELEVENLABS_API_KEY',
     label: 'ElevenLabs',
-    description: 'Text-to-speech for Aria voice responses.',
+    description: 'Text-to-speech for Aria voice responses, and optional speech-to-text transcription.',
+  },
+  {
+    name: 'SARVAM_API_KEY',
+    label: 'Sarvam AI',
+    description: 'Speech-to-text transcription optimised for Indian languages.',
   },
 ]
 
