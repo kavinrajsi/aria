@@ -141,7 +141,7 @@ export default async function MeetingDetailPage({ params }: Props) {
   }))
 
   // App-layer authorization: user must be admin, organizer, or a participant
-  const isParticipant = participants.some((mp) => mp.user_id === user.id)
+  const isParticipant = participants.some((mp: { user_id: string }) => mp.user_id === user.id)
   if (!isAdmin && !isOrganizer && !isParticipant) notFound()
 
   const scheduledAt = new Date(meeting.scheduled_at)
