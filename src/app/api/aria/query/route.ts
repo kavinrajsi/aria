@@ -94,8 +94,8 @@ export async function POST(req: NextRequest) {
           provider: 'openai',
           model: 'gpt-4o-mini',
           operation: 'aria_query',
-          input_tokens: usage.promptTokens ?? 0,
-          output_tokens: usage.completionTokens ?? 0,
+          input_tokens: usage.inputTokens ?? 0,
+          output_tokens: usage.outputTokens ?? 0,
         }),
       ])
     },
