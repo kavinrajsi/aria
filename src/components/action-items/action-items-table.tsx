@@ -139,7 +139,7 @@ export function ActionItemsTable({ items, currentUserId, isAdmin }: ActionItemsT
                     {item.status}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
+                <TableCell className="text-xs text-muted-foreground" suppressHydrationWarning>
                   {format(new Date(item.created_at), 'MMM d')}
                 </TableCell>
               </TableRow>

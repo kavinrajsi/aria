@@ -26,11 +26,11 @@ export function MeetingCard({ meeting }: MeetingCardProps) {
         <CardContent className="pt-0 space-y-2">
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Calendar className="h-3.5 w-3.5 shrink-0" />
-            <span>{format(scheduledAt, 'MMM d, yyyy')}</span>
+            <span suppressHydrationWarning>{format(scheduledAt, 'MMM d, yyyy')}</span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="h-3.5 w-3.5 shrink-0" />
-            <span>{format(scheduledAt, 'h:mm a')}</span>
+            <span suppressHydrationWarning>{format(scheduledAt, 'h:mm a')}</span>
           </div>
           {meeting.participant_count !== undefined && (
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

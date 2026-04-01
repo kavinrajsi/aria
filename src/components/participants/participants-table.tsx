@@ -130,7 +130,7 @@ export function ParticipantsTable({ participants, currentUserId, isAdmin }: Part
                     ) : null}
                   </div>
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
+                <TableCell className="text-xs text-muted-foreground" suppressHydrationWarning>
                   {format(new Date(p.created_at), 'MMM d, yyyy')}
                 </TableCell>
                 <TableCell>

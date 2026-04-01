@@ -164,7 +164,7 @@ export function MeetingsView({ meetings, isAdmin }: Props) {
                       </p>
                     )}
                   </div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground" suppressHydrationWarning>
                     <p>{format(scheduledAt, 'MMM d, yyyy')}</p>
                     <p>{format(scheduledAt, 'h:mm a')}</p>
                   </div>
