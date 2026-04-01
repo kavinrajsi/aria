@@ -122,6 +122,7 @@ function getProvider(provider: SttProvider): ProviderSetup {
               message_type: 'input_audio_chunk',
               audio_base_64: pcm16Base64,
               sample_rate: 16_000,
+              commit: false, // VAD handles committing
             })
           )
         },

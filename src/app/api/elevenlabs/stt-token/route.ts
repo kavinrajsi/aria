@@ -18,5 +18,17 @@ export async function GET() {
     return NextResponse.json({ error: 'ElevenLabs API key not configured' }, { status: 503 })
   }
 
-  return NextResponse.json({ token: setting.value })
+  // Generate a single-use ephemeral token for browser WebSocket auth
+  const res = await fetch('https://api.elevenlabs.io/v1/single-use-token/realtime_scribe', {
+    method: 'POST',
+    headers: { 'xi-api-key': setting.value },
+  })
+
+  if (!res.ok) {
+    console.error('[elevenlabs/stt-token]', res.status, await res.text())
+    return NextResponse.json({ error: 'Failed to create ElevenLabs token' }, { status: 502 })
+  }
+
+  const { token } = await res.json()
+  return NextResponse.json({ token })
 }
